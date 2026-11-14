@@ -43,7 +43,7 @@ const CAMPAIGN = [
     calm: 1,
     warn: 1, 
     storm: 1,
-    fact: 'One of the biggest flares of its solar cycle. On Mars, NASA\'s Curiosity rover measured surface radiation roughly doubling with its RAD instrument, the same kind of data future crews will rely on.',
+    fact: 'One of the biggest flares of its solar cycle. On Mars, NASA\'s Curiosity rover measured surface radiation roughly doubling with its RAD instrument, the same kind of data future crews will use to plan for deep-space missions.',
     saved: { cls: 'X8.2', peak: '2017-09-10T16:06Z', region: 12673, loc: 'S08W88', sepTime: '2017-09-10T16:25Z', sepInst: 'GOES13: SEM/EPS >100 MeV' } 
   },
   { key: '2023', 
@@ -66,7 +66,7 @@ const CAMPAIGN = [
     calm: 1,
     warn: 1,
     storm: 1,
-    Fact: 'The intense extreme ultraviolet (EUV) radiation ionized Earth upper atmosphere, causing an R1 (minor) shortwave radio blackout over parts of Japan, Southeast Asia, and the Asia-Pacific region affecting frequencies below 30 MHz',
+    Fact: 'The intense extreme ultraviolet (EUV) radiation ionized Earth upper atmosphere, causing an R1 (minor) shortwave radio blackout over parts of Japan, Southeast Asia, and the Asia-Pacific region.',
     saved: {cls: 'M3.4', peak: '2022-06-13T04:07Z', region: '13032', loc: 'N26E53', sepTIME: '2022-06-13T03:01Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
   },
   {
@@ -90,7 +90,7 @@ const CAMPAIGN = [
     calm: 1,
     warn: 1,
     storm: 1,
-    Fact: 'On August 8, 2023, two consecutive X-class solar flares (an X1.6 flare on August 5 and an X1.5 flare on August 7 from sunspot region AR3386) combined their coronal mass ejections (CMEs) into a "cannibal CME" that delivered a glancing blow to Earth',
+    Fact: 'On August 8, 2023, two consecutive X-class solar flares (an X1.6 flare on August 5 and an X1.5 flare on August 7 from sunspot region AR3386) combined their coronal mass ejections (CMEs) in a fast-moving storm front.',
     saved: {cls: "X1.6", peak: '2023-08-08T09:31Z', region: '13387', loc: 'N18W78', sepTIME: '2023-08-08T09:20Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
   },
   {
@@ -114,7 +114,7 @@ const CAMPAIGN = [
     calm: 1,
     warn: 1,
     storm: 1,
-    Fact: 'On October 9, 2025, an M2-class solar flare erupted from the Sun west limb, which was also associated with a prominence eruption observed by India Aditya-L1 spacecraft Visible Emission Line Coronagraph (VELC)',
+    Fact: 'On October 9, 2025, an M2-class solar flare erupted from the Sun west limb, which was also associated with a prominence eruption observed by India Aditya-L1 spacecraft Visible Emission Line Coronagraph.',
     saved: {cls: 'M2', peak: '2025-10-09T12:31Z', region: 14236, loc: 'N05W95', sepTIME: '2025-10-09T12:11Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
   }
   
@@ -365,12 +365,12 @@ function setPhase(p, dur, banner) { S.phase = p; S.t = S.dur = dur; if (banner) 
 
 function startRound() {
   S.stats = { breaks: 0 };
-  S.flare = 1;
+  if (!isSpecialRound()) S.flare = 1;
 
   const ev = EVENTS[S.round];
 
   if (isSpecialRound()) {
-    setPhase('calm', 10, 'ALL CLEAR');
+    setPhase('calm', 2, 'ALL CLEAR');
   } else {
     setPhase('calm', ev.calm, 'ALL CLEAR');
   }
@@ -384,7 +384,8 @@ function tick() {
   if (!playing()) return;
 
   const dt = DT * SPEED;
-  const ev = EVENTS[S.round];
+  const flare = currentFlare();
+  const ev = isSpecialRound() ? flare : EVENTS[S.round];
 
   S.t -= dt;
 
@@ -453,40 +454,21 @@ function tick() {
   if (!S.crew.some(c => !c.out)) endGame();
   else if (S.t <= 0) {
     if (S.phase === 'calm') {
-      setPhase('warning', ev.warn, 'STORM INCOMING');
-      log(`${ev.cls} solar flare detected! Radiation storm hits in ${ev.warn} seconds. Everyone to the Storm Shelter!`, 'warn', true);
+      const warnTime = isSpecialRound() ? flare.warn : ev.warn;
+      setPhase('warning', warnTime, 'STORM INCOMING');
+      const label = isSpecialRound() ? `Special flare ${S.flare} of ${SPECIAL_FLARES.length}` : `${ev.cls} solar flare`;
+      log(`${label} detected! Radiation storm hits in ${warnTime} seconds. Everyone to the Storm Shelter!`, 'warn', true);
     } else if (S.phase === 'warning') {
-      setPhase('storm', ev.storm, 'RADIATION STORM'); S.shake = 0.8;
+      const stormTime = isSpecialRound() ? flare.storm : ev.storm;
+      setPhase('storm', stormTime, 'RADIATION STORM'); S.shake = 0.8;
       log('The radiation storm has reached the outpost!', 'bad', true);
-    } else debrief();
-  }
-
-    if (!S.crew.some(c => !c.out)) {
-    endGame();
-  } else if (S.t <= 0) {
-    if (S.phase === 'calm') {
-      if (S.round === EVENTS.length - 1) {
-        setPhase('warning', 8, 'STORM INCOMING');
-      } else {
-        setPhase('warning', ev.warn, 'STORM INCOMING');
-      }
-      log('Solar flare detected! Get everyone to the shelter!', 'warn', true);
-    } else if (S.phase === 'warning') {
-      if (S.round === EVENTS.length - 1) {
-        setPhase('storm', 10, 'RADIATION STORM');
-      } else {
-        setPhase('storm', ev.storm, 'RADIATION STORM');
-      }
-      S.shake = 0.8;
-      log('The radiation storm has reached the outpost!', 'bad', true);
-    } else if (S.round === EVENTS.length - 1) {
-      S.specialFlare++;
-
-      if (S.specialFlare >= 4) {
+    } else if (isSpecialRound()) {
+      if (S.flare >= SPECIAL_FLARES.length) {
         debrief();
       } else {
-        setPhase('warning', 6, 'NEXT FLARE');
-        log('Another flare is incoming. Stay ready!', 'warn', true);
+        S.flare++;
+        setPhase('calm', 2, 'NEXT FLARE');
+        log(`Flare ${S.flare} is incoming. Stay ready!`, 'warn', true);
       }
     } else {
       debrief();
@@ -767,7 +749,7 @@ function drawMachines(ts) {
   // greenhouse: grow lights + plants that grow with the food supply
   const gz = ZONES.green, lit = lvl('farm');
   g.fillStyle = lit ? `rgba(200,110,255,${0.25 + lit * 0.2})` : '#222a38'; g.fillRect(gz.x + 40, gz.y + 34, gz.w - 80, 6);
-  if (lit) { const lg = g.createLinearGradient(0, gz.y + 40, 0, gz.floor); lg.addColorStop(0, `rgba(200,110,255,${0.08 * lit})`); lg.addColorStop(1, 'rgba(200,110,255,0)'); g.fillStyle = lg; g.fillRect(gz.x + 40, gz.y + 40, gz.w - 80, 90); }
+  if (lit) { const lg = g.createLinearGradient(0, gz.y + 40, 0, gz.floor); lg.addColorStop(0, `rgba(200,110,255,${0.08 * lit})`); lg.addColorStop(1, 'rgba(200,110,255,0)'); g.fillStyle = lg; g.fillRect(gz.x + 40, gz.y + 40, gz.w - 80, gz.floor - gz.y - 40); }
   for (let i = 0; i < 7; i++) {
     const px = gz.x + 45 + i * 44, hgt = 8 + T.food * 0.42;
     g.fillStyle = '#5a4634'; g.fillRect(px - 12, gz.floor - 8, 24, 8);
