@@ -3,6 +3,26 @@ const $ = s => document.querySelector(s);
 const SPEED = +new URLSearchParams(location.search).get('speed') || 1; // ?speed=5 for quick testing
 const DT = 0.25;
 
+const SPECIAL_FLARES = [
+  { sev: 0.8, warn: 7, storm: 8 },
+  { sev: 1.0, warn: 5, storm: 8 },
+  { sev: 1.2, warn: 5, storm: 9 },
+  { sev: 1.5, warn: 4, storm: 10 }
+];
+
+function isSpecialRound() {
+  return S.round === EVENTS.length - 1;
+}
+
+function currentFlare() {
+  if (isSpecialRound()) {
+    return SPECIAL_FLARES[S.flare - 1];
+  }
+  return EVENTS[S.round];
+}
+
+
+
 // ---------- NASA DONKI space-weather data ----------
 // Storm 1 is the strongest flare of the last 30 days (fetched live).
 // Storms 2 and 3 are fixed famous events, also fetched from DONKI by ID.
@@ -10,19 +30,19 @@ const DT = 0.25;
 const DONKI = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/';
 const SAVED_LIVE = { cls: 'M3.5', peak: '2026-11-05T18:33Z', region: null, loc: null };
 const CAMPAIGN = [
-  { key: 'live', title: 'Latest Big Flare', calm: 10 , warn: 10, storm: 10 },
+  { key: 'live', title: 'Latest Big Flare', calm: 1 , warn: 1, storm: 1 },
   { key: '2024', flrID: '2024-05-11T01:10:00-FLR-001', from: '2024-05-11', to: '2024-05-11',
-    title: 'The Gannon Storm', sev: 1.6, calm: 10 ,warn: 15, storm: 30,
+    title: 'The Gannon Storm', sev: 2.5, calm: 1 ,warn: 1, storm: 1,
     fact: 'This flare was part of a chain of eruptions in May 2024 that caused the strongest geomagnetic storm at Earth in over 20 years. People saw auroras much farther south than usual.',
     saved: { cls: 'X5.8', peak: '2024-05-11T01:23Z', region: 13664, loc: 'S17W47', sepTime: '2024-05-11T02:10Z', sepInst: 'GOES-P: SEISS >100 MeV' } },
   { key: '2017', 
     flrID: '2017-09-10T15:35:00-FLR-001', 
     from: '2017-09-10', to: '2017-09-10',
     title: 'The X8.2 Flare', 
-    sev: 2.4, 
+    sev: 2.8, 
     calm: 1,
     warn: 1, 
-    storm: 10,
+    storm: 1,
     fact: 'One of the biggest flares of its solar cycle. On Mars, NASA\'s Curiosity rover measured surface radiation roughly doubling with its RAD instrument, the same kind of data future crews will rely on.',
     saved: { cls: 'X8.2', peak: '2017-09-10T16:06Z', region: 12673, loc: 'S08W88', sepTime: '2017-09-10T16:25Z', sepInst: 'GOES13: SEM/EPS >100 MeV' } 
   },
@@ -30,14 +50,73 @@ const CAMPAIGN = [
     flrID: '2023-05-11T08:47:00-FLR-001',
     from: '2023-05-11', to: '2023-05-11',
     title: 'The X3.3 Flare',
-    sev: 0.7,
-    calm: 30,
-    warn: 10,
-    storm: 20,
+    sev: 2.3,
+    calm: 1,
+    warn: 1,
+    storm: 1,
     fact: 'This flare is immediately preceded by a C-class flare, with approximate peak intensity C7.9 and peak time 2023-05-11T18:23Z from AR 3297 (N10W40).',
     saved: {cls: 'X3.3', peak: '2023-05-11T08:47:00-FLR-001', region: '13294', loc: 'S06W46', sepTime: '2023-05-11T09:01Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
-
   },  
+  {
+    key: '2022',
+    flrID: '2022-06-13T03:01:00-FLR-001',
+    from: '2022-06-13T03:01Z', to: '2022-06-13T03:01Z',
+    title: "The M3.4 Flare",
+    sev: 1.3,
+    calm: 1,
+    warn: 1,
+    storm: 1,
+    Fact: 'The intense extreme ultraviolet (EUV) radiation ionized Earth upper atmosphere, causing an R1 (minor) shortwave radio blackout over parts of Japan, Southeast Asia, and the Asia-Pacific region affecting frequencies below 30 MHz',
+    saved: {cls: 'M3.4', peak: '2022-06-13T04:07Z', region: '13032', loc: 'N26E53', sepTIME: '2022-06-13T03:01Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
+  },
+  {
+    key: '2026',
+    flrID: '2026-10-16T15:38:00-FLR-001',
+    from: '2026-10-16', to: '2026-10-16',
+    title: "The M1.3 Flare",
+    sev: 1.1,
+    calm: 1,
+    warn: 1,
+    storm: 1,
+    Fact: 'NASA and space weather monitors recorded M-class flare events alongside general background C-class activity. This is the most recent record',
+    saved: {cls: "M1.3", peak: '2026-10-16T15:42Z', region: '14551', loc: 'S15W48', sepTIME: '2026-10-19T08:54Z', sepInst: 'GOES-P: EXIS 1.0-8.0'} 
+  },
+  {
+    key: '2023',
+    flrID: '2023-08-08T09:20:00-FLR-001',
+    from: '2023-08-08', to: '023-08-08',
+    title: "The X1.6 Flare",
+    sev: 2.2,
+    calm: 1,
+    warn: 1,
+    storm: 1,
+    Fact: 'On August 8, 2023, two consecutive X-class solar flares (an X1.6 flare on August 5 and an X1.5 flare on August 7 from sunspot region AR3386) combined their coronal mass ejections (CMEs) into a "cannibal CME" that delivered a glancing blow to Earth',
+    saved: {cls: "X1.6", peak: '2023-08-08T09:31Z', region: '13387', loc: 'N18W78', sepTIME: '2023-08-08T09:20Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
+  },
+  {
+    key: '2022',
+    flrID: '2022-12-09T13:59:00-FLR-001',
+    from: '2022-12-09', to: '2022-12-09',
+    title: "The C6 Flare",
+    sev: '0.6',
+    calm: 1,
+    warn: 1,
+    storm: 1,
+    Fact: 'On December 9, 2022, minor to moderate solar activity included small C-class solar flares, such as a C-class eruption recorded around active sunspot regions',
+    saved: {cls: 'C6', peak: '2022-12-09T14:13Z', region: '13163', loc: 'S20E90', sepTIME: '2022-12-09T13:59Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
+  },
+  {
+    key: '2025',
+    flrID: '2025-10-09T12:11:00-FLR-001',
+    from: '2025-10-09', to: '2025-10-09',
+    title: 'The M2 Flare',
+    sev: 1.2,
+    calm: 1,
+    warn: 1,
+    storm: 1,
+    Fact: 'On October 9, 2025, an M2-class solar flare erupted from the Sun west limb, which was also associated with a prominence eruption observed by India Aditya-L1 spacecraft Visible Emission Line Coronagraph (VELC)',
+    saved: {cls: 'M2', peak: '2025-10-09T12:31Z', region: 14236, loc: 'N05W95', sepTIME: '2025-10-09T12:11Z', sepInst: 'GOES-P: EXIS 1.0-8.0'}
+  }
   
 ];
 
@@ -111,6 +190,8 @@ const SYSTEMS = {
   farm:   { name: 'Food',   icon: '🌱', tank: 'food', at: [405, 312] },
   shield: { name: 'Shield', icon: '🛡️', tank: null,   at: [600, 455] },
 };
+
+
 const KW_PER_LEVEL = 2, WALK = 110;
 
 let S; // game state
@@ -125,18 +206,31 @@ const CARGO = {
 
 
 function newGame() {
-  S = {
-    round: 0, phase: 'brief', t: 0, dur: 1, I: 0, supply: 14, sel: null, drag: null, ptr: null, science: 0,
+S = {
+    round: 0,
+    flare: 1,
+    phase: 'brief',
+    t: 0,
+    dur: 1,
+    I: 0,
+    supply: 14,
+    sel: null,
+    drag: null,
+    ptr: null,
+    science: 0,
     tanks: { o2: 70, h2o: 70, food: 70 },
-    loadout: { o2: 0, h2o: 0, food: 0},
+    loadout: { o2: 0, h2o: 0, food: 0 },
     sys: { o2: { lvl: 2 }, h2o: { lvl: 2 }, farm: { lvl: 2 }, shield: { lvl: 0 } },
     crew: [
       { id: 'ada',  name: 'Ada',  role: 'Pilot',     perk: 'runs 2x faster',     color: '#37d6ff', zone: 'work' },
       { id: 'kai',  name: 'Kai',  role: 'Engineer',  perk: 'easier repairs',     color: '#ffb938', zone: 'work' },
       { id: 'rosa', name: 'Rosa', role: 'Botanist',  perk: 'grows 2x food',      color: '#4be38a', zone: 'green' },
-      { id: 'sam',  name: 'Sam',  role: 'Geologist', perk: '2x science outside', color: '#c58bff', zone: 'eva' },
+      { id: 'sam',  name: 'Sam',  role: 'Geologist', perk: '2x science outside', color: '#c58bff', zone: 'eva' }
     ],
-    stats: { breaks: 0 }, fx: [], banner: null, shake: 0,
+    stats: { breaks: 0 },
+    fx: [],
+    banner: null,
+    shake: 0
   };
   S.crew.forEach((c, i) => Object.assign(c, { i, x: ZONES[c.zone].slot(i), y: ZONES[c.zone].floor, path: [], dir: 1, dose: 0, health: 100, out: false }));
   for (const k in S.sys) Object.assign(S.sys[k], { broken: false, repair: 0 });
@@ -206,21 +300,33 @@ function setLevel(k, d) {
 
 function render() {
   document.body.className = S.phase;
-  $('#round').textContent = `Storm ${Math.min(S.round + 1, EVENTS.length)} / ${EVENTS.length}`;
+
+  if (isSpecialRound() && playing()) {
+    $('#round').textContent = 'SPECIAL ROUND · FLARE ' + S.flare + ' / ' + SPECIAL_FLARES.length;
+  } else {
+    $('#round').textContent = 'Storm ' + Math.min(S.round + 1, EVENTS.length) + ' / ' + EVENTS.length;
+  }
+
   $('#phase').textContent = { brief: 'STANDBY', calm: 'ALL CLEAR', warning: 'STORM INCOMING', storm: 'RADIATION STORM', debrief: 'DEBRIEF', end: 'MISSION OVER' }[S.phase];
   $('#timer').textContent = playing() ? Math.ceil(S.t) : '--';
-  $('#pwrUsed').textContent = used(); $('#pwrMax').textContent = S.supply;
+  $('#pwrUsed').textContent = used();
+  $('#pwrMax').textContent = S.supply;
   $('#pwrBar').style.width = Math.min(100, used() / S.supply * 100) + '%';
   $('#science').textContent = Math.floor(S.science);
+
   for (const k in S.sys) {
-    const s = S.sys[k], def = SYSTEMS[k], el = document.querySelector(`.sys[data-s="${k}"]`);
+    const s = S.sys[k];
+    const def = SYSTEMS[k];
+    const el = document.querySelector('.sys[data-s="' + k + '"]');
     const v = def.tank ? S.tanks[def.tank] : lvl('shield') * 20;
+
     el.classList.toggle('broken', s.broken);
     el.classList.toggle('low', !!def.tank && v < 25);
     el.querySelectorAll('.pips i').forEach((p, i) => p.classList.toggle('on', i < s.lvl));
-    el.querySelector('small').textContent = s.broken ? 'BROKEN' : def.tank ? Math.round(v) + '%' : v ? `-${v}% radiation` : 'off';
+    el.querySelector('small').textContent = s.broken ? 'BROKEN' : def.tank ? Math.round(v) + '%' : v ? '-' + v + '% radiation' : 'off';
     el.querySelector('.bar i').style.width = (def.tank ? v : v / 0.6) + '%';
   }
+
   S.crew.forEach(c => {
     c.el.className = 'chip' + (S.sel === c.id ? ' sel' : '') + (c.out ? ' out' : '');
     c.el.querySelector('.st').textContent = c.out ? 'Evacuated to medical' : `${c.perk} · ${Math.round(c.dose * 10)} mSv`;
@@ -259,16 +365,27 @@ function setPhase(p, dur, banner) { S.phase = p; S.t = S.dur = dur; if (banner) 
 
 function startRound() {
   S.stats = { breaks: 0 };
+  S.flare = 1;
+
   const ev = EVENTS[S.round];
-  setPhase('calm', ev.calm, 'ALL CLEAR'); //counter for the calm counter phase is either ev.calm, if no value is provided then its 25 second
+
+  if (isSpecialRound()) {
+    setPhase('calm', 10, 'ALL CLEAR');
+  } else {
+    setPhase('calm', ev.calm, 'ALL CLEAR');
+  }
+
   $('#modal').classList.remove('show', 'fixing');
   log('All clear. Collect science outside and keep supplies topped up.', 'good', true);
 }
 
 function tick() {
-  walkClock();
+   walkClock();
   if (!playing()) return;
-  const dt = DT * SPEED, ev = EVENTS[S.round];
+
+  const dt = DT * SPEED;
+  const ev = EVENTS[S.round];
+
   S.t -= dt;
 
   // power: solar arrays fold into safe mode during the storm
@@ -343,6 +460,39 @@ function tick() {
       log('The radiation storm has reached the outpost!', 'bad', true);
     } else debrief();
   }
+
+    if (!S.crew.some(c => !c.out)) {
+    endGame();
+  } else if (S.t <= 0) {
+    if (S.phase === 'calm') {
+      if (S.round === EVENTS.length - 1) {
+        setPhase('warning', 8, 'STORM INCOMING');
+      } else {
+        setPhase('warning', ev.warn, 'STORM INCOMING');
+      }
+      log('Solar flare detected! Get everyone to the shelter!', 'warn', true);
+    } else if (S.phase === 'warning') {
+      if (S.round === EVENTS.length - 1) {
+        setPhase('storm', 10, 'RADIATION STORM');
+      } else {
+        setPhase('storm', ev.storm, 'RADIATION STORM');
+      }
+      S.shake = 0.8;
+      log('The radiation storm has reached the outpost!', 'bad', true);
+    } else if (S.round === EVENTS.length - 1) {
+      S.specialFlare++;
+
+      if (S.specialFlare >= 4) {
+        debrief();
+      } else {
+        setPhase('warning', 6, 'NEXT FLARE');
+        log('Another flare is incoming. Stay ready!', 'warn', true);
+      }
+    } else {
+      debrief();
+    }
+  }
+
   render();
 }
 
