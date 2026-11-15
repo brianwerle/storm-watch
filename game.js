@@ -583,7 +583,7 @@ function openFix(k) {
     });
   }
   if (k === 'h2o') return openMini('lp', r => {
-    if (!r) return log('The water recycler is still broken. Tap FIX to try again.', 'warn', null);
+    if (!r || r.ok === false) return log('The water recycler is still broken. Tap FIX to try again.', 'warn', null);
     repaired('h2o'); spill('h2o', Math.max(0, 75 - r.resource) / 75 * 3, 'water');
   });
   if (k === 'shield') return openMini('sy', r => {

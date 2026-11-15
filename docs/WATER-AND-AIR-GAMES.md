@@ -1,8 +1,9 @@
 # Water and air mini-games
 
-Two standalone 12-second arcade games, in the same cinematic style as the other
-Storm Watch mini-games. They share `life-support-arcade.js` and
-`life-support-arcade.css`, plus the existing NASA media in `assets/space/`.
+Two standalone arcade games, in the same cinematic style as the other
+Storm Watch mini-games. Scrubber Sprint uses `life-support-arcade.js`.
+Leak Patrol uses `moon-water.js` and `moon-water.css`; both use the shared
+`life-support-arcade.css` and NASA media in `assets/space/`.
 Neither page loads the main game's code.
 
 Run `python -m http.server 8123` from the repository root, then open:
@@ -12,12 +13,13 @@ Run `python -m http.server 8123` from the repository root, then open:
 
 ## Leak Patrol
 
-Start with one highlighted practice leak; the timer stays stopped until it is
-sealed. Tap a spraying valve once to seal it. Open leaks drain the storage tank;
-the recycler continues to recover water when the pump is running. Seals build
-combos and score. Emergency pump pause stops water loss for three seconds while
-the player catches up, with a six-second cooldown. Long-neglected leaks cost
-extra water and break the combo. The three waves progressively add leaks faster.
+The current version is **Moon Water**, a route-planning puzzle. Dig through soil
+around rock barriers, then melt underground stored ice and guide at least 16 of
+24 water drops to the base's underground tank. Red fissures spill water and dead
+ends trap it. There is no planning countdown and a pour takes only a few seconds.
+Undo, Clear, hints, editable retries, and mirrored replay maps are included.
+See [MOON-WATER.md](MOON-WATER.md) for rules and science boundaries. Losing does
+not restore the main game's broken water system.
 
 ## Scrubber Sprint
 
@@ -31,10 +33,10 @@ Airflow speeds up across three waves.
 
 ## Shared behavior
 
-Both games include local best scores, replay, a mission debrief, mute, motion
-controls, keyboard-accessible buttons, large mobile targets, and automatic pause
-on browser hiding. Decorative effects can be stopped while essential gameplay
-continues. A full run always reaches results even if the resource meter hits zero.
+Both games include replay, a mission debrief, mute, motion controls, and mobile
+input. Water flow pauses while the browser is hidden. Scrubber Sprint retains its
+12-second scoring rounds and local best score; Leak Patrol has binary win/loss.
+Decorative effects can be stopped while essential gameplay continues.
 
 Browser verification covered actual pointer hits on moving molecules, seal taps,
 resource changes, filter capacity, emergency abilities, pause, full simulated
