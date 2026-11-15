@@ -1,156 +1,118 @@
 # Storm Watch — Team Handoff
 
-As of Nov 14, 2026. The live, editable version of this handoff is a shared Claude doc; this file is a snapshot of it.
+As of Nov 15, 2026. This file mirrors the team's shared handoff doc. Earlier change notes (Nov 14 judging build, Run 2, Nov 15 judges build) are in this file's git history.
 
 ## Summary
 
-Storm Watch is a browser game for the **Build a Junior Astronaut Mission Trainer** challenge: players run a 4-person base at the Moon's south pole and keep the crew alive through three real solar storms pulled from NASA's DONKI space-weather feed. It plays like a cutaway base-management game (in the spirit of FTL and Fallout Shelter): drag astronauts between rooms, share limited power, fix breakdowns with a quick mini-game.
+Storm Watch is live and playable at [storm-watch-spaceapps.web.app](https://storm-watch-spaceapps.web.app). It is our entry for **Build a Junior Astronaut Mission Trainer**: kids aged 7 to 12 command a 4-person base at the Moon's south pole and keep the crew safe through five rounds of real solar storms from NASA's DONKI records.
 
-It is playable start to finish today. Difficulty is untuned, the art is simple drawn shapes, and nobody has played a full game at normal speed yet.
+The current version includes everyone's work: Sidra's life support, crew, science fixes and south-pole scene; Quan's August 2023 storm and Flare Swarm finale; and six mini-games that open inside the main game.
+
+| What | Where |
+| --- | --- |
+| Play (public, no sign-in, no expiry) | [storm-watch-spaceapps.web.app](https://storm-watch-spaceapps.web.app) |
+| Code | [github.com/brianwerle/storm-watch](https://github.com/brianwerle/storm-watch), branch `main` |
+| QR code for the play link | [storm-watch-qr.png](storm-watch-qr.png) |
+| Update the live site | `firebase deploy --only hosting` from the repo folder |
 
 ## How it fits the challenge
 
-Every element of the challenge brief maps to something the player does. Brief as summarized by Space Data Atlas: *build an interactive game or app where students run a lunar or Martian outpost balancing life support, radiation shielding, power, and food.*
-
-| Challenge asks for | Where it is in Storm Watch |
+| Challenge element | In the game |
 | --- | --- |
-| Interactive game for students | Drag-and-drop base game, about 6 minutes a run, almost no reading during play |
-| Lunar or Martian outpost | 4-person base at the lunar south pole: surface, Greenhouse, Workshop, Storm Shelter |
-| Life support | Oxygen, water and food are tracked in real kg and drain per crew member at NASA BVAD rates (more when working outside, less when resting in the shelter). The oxygen machine makes air from water by electrolysis, so water and oxygen are linked |
-| Radiation shielding | Rooms shield differently (surface 100%, Greenhouse and Workshop 50%, Shelter 10% of outside dose); a powered water-wall shield cuts up to 60% more; crew radiation dose is tracked against a career limit |
-| Power | 14 kW shared between four systems with + / −; drops to 10 kW when solar panels fold during a storm |
-| Food | Greenhouse grow lights plus crew working there; plants visibly wilt as food runs low |
-| Real NASA data (suggested: DONKI, Curiosity RAD, life-support baselines) | Storms come from NASA DONKI flare and particle-event records, including the real warning time between flare and radiation |
-| Learning outcome | After each storm a debrief card shows what really happened, the flare class, sunspot region and real warning time, with a link to the NASA record |
+| Ages 7 to 12, plain language | Three levels (Cadet 7-9, Pilot 10-12, Commander for older players); tap-to-explain word chips; spoken Mission Control; hints on the easy level |
+| Life support | Oxygen, water and food in real kilograms at NASA BVAD rates; oxygen is made by splitting water |
+| Radiation shielding | Deeper rooms are safer; powered water-wall shield; radiation vests; dose tracked per astronaut, with NASA's 600 mSv career limit grounding anyone who passes it |
+| Power budgeting | 14 kW shared between four machines; less when panels fold or go offline |
+| Food production | Greenhouse with a garden that severe storms damage and the Botanist regrows |
+| Communication delay | Call Mission Control: the answer takes 2.6 seconds (1.3 each way), with the Mars comparison |
+| Every choice costs something | 10-crate packing limit, power sharing, science versus safety; each debrief lists what the choices cost |
+| Compounding consequences | Garden damage slows food for days; dose never goes down; panels stay offline until rebooted |
+| Real data, attributed in the tool | "Real NASA data" panel, a source on every fact card, live or saved marker on every storm |
 
-The brief wording above comes from Space Data Atlas (spacedata.swapniltamse.com), not NASA's official page. See *Before we submit*.
+The challenge wording here came from Space Data Atlas and a Gemini summary of the official page. Check it against spaceappschallenge.org before submitting.
 
 ## How the game plays
 
-A run is three storms, each with the same four beats:
+A full game takes about 8 to 10 minutes: title screen, crew introductions, packing the rocket (10 crates, so every item costs another), a launch cutscene, then five rounds.
 
-1. **All clear (25 s):** send crew outside for science stars, keep tanks topped up, set power.
-2. **Storm incoming (20 s, then 15 s, then 10 s):** alarm, voice warning, a storm front sweeps from the Sun. Get everyone down the ladder to the Storm Shelter.
-3. **Radiation storm (30–40 s):** red streaks rain down, panels fold, power drops, machines break and spark. Someone must leave the shelter to repair them.
-4. **Debrief card:** crew health and dose, plus the real NASA facts for that storm.
+Each round has four beats: **All clear** (collect science, top up supplies), **Storm incoming** (Mission Control radios the real flare; a Storm Tracker shows its class, sunspot and real warning time), **Radiation storm** (share power, fix what breaks), and a **Debrief** (the real story, one quiz question, what the player's choices cost).
 
-After storm 3 the player gets a Flight Readiness Rating (Cadet, Mission Specialist, Mission Commander, Flight Director, or Mission Failed).
+| Round | Real storm (NASA DONKI) | Planned repair mini-game |
+| --- | --- | --- |
+| 1 | Strongest flare of the last 30 days, fetched live | Leak Patrol (water) |
+| 2 | M4.2, May 9, 2023 | Scrubber Sprint (oxygen), then Solar Reboot (panels) |
+| 3 | X1.5, Aug 7, 2023 | Shield Sync (shield) |
+| 4 | X8.2, Sep 10, 2017, followed by the Mars aurora scene | Cosmic Match (grow lights), Greenhouse Guard (plants) |
+| Finale | Flare Swarm: X1.0, X2.2, X3.9 and X5.8 from one sunspot, May 8-11, 2024, back to back | Cosmic Match (oxygen), Solar Reboot, Greenhouse Guard |
 
-**Controls:** drag an astronaut onto a room (or tap the astronaut, then the room). Use + / − under each system for power. A broken machine shows a red FIX bubble; with someone in the Workshop, tap it and match coloured plugs to sockets.
+After the finale the player gets a Flight Readiness Rating and a checklist of 10 badges. Endless mode continues with six more real storms. Fact cards (19, each with its source) and badges are saved on the device in a Cadet Logbook.
 
-| Crew | Role | Sash and emblem | Perk |
-| --- | --- | --- | --- |
-| Commander (the player's own astronaut, customizable) | Commander | Player's choice of colour, star | Moves 2x faster |
-| Brian | Engineer | Slate grey, ball bearing | Repair puzzle has 3 plugs instead of 4 |
-| Sidra | Botanist | Green, leaf | Grows 2x food in the Greenhouse |
-| Quan | Geologist | Copper, rock | Earns 2x science outside |
+**Controls:** drag an astronaut onto a room, or tap the astronaut and then the room. Use + / − for power. Tap a red FIX bubble to send the Engineer and open that machine's mini-game; the base pauses while a mini-game or fact card is open.
 
-The crew are drawn after the team members. Each has a portrait on the crew cards, the start screen and the debrief. On the start screen, **Customize your Commander** sets the player's name, sash colour, skin tone, hair or hijab, hair colour, glasses / earrings / necklace and beard; choices are saved in the browser on that device. When the mission begins, the camera zooms in on each crew member in turn: helmet off, with a speech bubble explaining their perk (Next / Skip intro, or it moves on by itself after 6 seconds). **Team photos:** put `brian.jpg`, `sidra.jpg` and `quan.jpg` in the `crew/` folder and the game pixelates them automatically; until then the drawn portraits are used (see `crew/README.md`). If the Commander is evacuated the game continues and the next crew member takes command. No NASA logos are used on the suits (NASA's insignia need explicit permission).
+## Who built what
 
-**Greenhouse and Greenhouse Guard:** the greenhouse has a garden health (shown as GARDEN % in the room). Only **severe storms** hurt it: storms from X-class flares with a real radiation storm (storms 2 and 3; storm 1 only if the live flare is that strong). Unprotected, the Gannon storm costs about 30% and the 2017 storm about 60% (less with the water shield on). A green **🌱 PROTECT** bubble appears on the greenhouse and on the Food card; it opens the team's **Greenhouse Guard** mini-game inside the main game (`greenhouse-guard.html?embed=1`), and the base pauses. The mini-game starts at the current garden health; its final garden health comes back to the main game and the plants are safe for the rest of that storm. **Food production scales with garden health**, and the garden regrows between storms while the grow lights are on (about 4x faster with Sidra in the greenhouse). The standalone Greenhouse Guard site works exactly as before.
+| Person | Contribution |
+| --- | --- |
+| Sidra | Life support in real kilograms at NASA BVAD rates; team crew, avatars and Commander customization; crew introductions; garden health; science-accuracy fixes; 600 mSv career limit; south-pole scene; 23-question quiz bank by level; phone layout; fact cards that pause the game |
+| Quan | Launch-prep idea (now "Pack your rocket"); per-storm timers; the August 2023 storm; the back-to-back finale (rebuilt on the real May 2024 flares) |
+| Brian | Mini-games: Cosmic Match, Solar Reboot, Greenhouse Guard, Scrubber Sprint, Shield Sync and the lunar-ice Leak Patrol; hosting; integration |
 
-**Score** = science + crew health × 2 + supplies left − total radiation dose. A crew member is evacuated if their dose reaches 1,000 mSv or their health hits zero from running out of oxygen, water or food.
+Quan's pull request #3 is still open on GitHub. Its two main ideas are in the game with credit; the rest was written against an older version.
 
 ## NASA data used
 
-All storm data comes from NASA's DONKI space-weather API (`ccmc.gsfc.nasa.gov/DONKI-API`), which needs no key or login and works from the browser. The game loads it on the start screen and uses a saved copy if NASA can't be reached in 7 seconds, so a dead Wi-Fi never breaks the demo.
+Every storm loads live from NASA's DONKI API when the game starts, with a saved copy in the code if NASA can't be reached within 7 seconds.
 
-| Storm | Source | Flare | Real warning time |
-| --- | --- | --- | --- |
-| 1 | Strongest flare of the last 30 days, fetched live (changes on its own) | M3.5, Nov 5, 2026 (as of Nov 14) | None: no radiation storm followed, so the card says "Real flare, practice storm" |
-| 2 | Gannon storm, flare `2024-05-11T01:10:00-FLR-001` | X5.8, May 11, 2024 | 47 minutes |
-| 3 | Flare `2017-09-10T15:35:00-FLR-001` | X8.2, Sep 10, 2017 | 19 minutes |
+| Source | Used for |
+| --- | --- |
+| NASA CCMC [DONKI](https://ccmc.gsfc.nasa.gov/tools/DONKI/) | Flare class, time, sunspot region, particle arrival (the real warning time) and CME speed for every storm |
+| NASA Life Support BVAD (NASA/TP-2015-218570 Rev2) | Crew oxygen, water and food use |
+| NASA [OSDR](https://osdr.nasa.gov/bio/repo/search) | Bone-loss and radiation biology fact cards (OSD-417, OSD-342, OSD-2) |
+| NASA MAVEN and Curiosity RAD | The September 2017 Mars aurora and surface radiation |
+| NASA LRO (Diviner, Moon Trek) | South-pole temperature and sunlight facts |
+| NASA Artemis I (MARE) | The radiation vest item |
+| NASA Deep Space Network | Signal delay |
+| Chang'e-4 LND (not NASA) | Background radiation on the lunar surface, 1.369 mSv per day |
+| NASA SDO | Sun imagery inside the mini-games |
 
-Warning time = minutes from flare peak to the first linked solar energetic particle (SEP) event, preferring the >100 MeV detector.
-
-**Real vs. game tuning:** flare class, dates, sunspot region and warning times are real. Crew oxygen, water and food use per day come from NASA's Life Support Baseline Values and Assumptions Document (BVAD, NASA/TP-2015-218570 Rev2, 2022), and the water-to-oxygen ratio (18 kg water gives 16 kg oxygen) is real chemistry. Storm strength in play, tank sizes, machine output, which BVAD rate goes with which activity, and the 1,000 mSv evacuation point are game settings chosen for difficulty, not NASA values. The 600 mSv line shown on dose bars is NASA's astronaut career limit. Not used yet: Curiosity RAD readings, Moon Trek imagery.
-
-**Time scale:** 1 game second = 1 hour on the base, shown as a Day / time clock in the header. During the storm warning the clock slows so the countdown covers the real warning time from NASA's records (47 minutes for storm 2, 19 for storm 3, a 30-minute drill for storm 1 when no radiation followed).
+**Real versus game settings:** flare classes, dates, sunspot regions, warning times and consumption rates are real. Storm strength in play, countdown lengths, tank sizes, the planned breakdowns and the difficulty levels are game settings, and are marked as such in the code.
 
 ## Running it and the code
 
-See the [README](../README.md) for running locally and deploying. Live site: [storm-watch-spaceapps.web.app](https://storm-watch-spaceapps.web.app) (public, any device, live NASA data), hosted on Firebase project `storm-watch-spaceapps`.
+Plain HTML, CSS and JavaScript with no framework. To run locally, start a small web server in the repo folder and open `http://localhost:8123` (add `?speed=4` to fast-forward):
 
-| File | What is in it |
+```bash
+python -m http.server 8123
+```
+
+| File | Purpose |
 | --- | --- |
-| `index.html` | Page frame: header, game canvas, crew chips, power and system bar |
-| `style.css` | Dark mission-control look, storm red-alert styles, mini-game and debrief cards |
-| `game.js` | Everything else: NASA DONKI loader and saved fallback, room layout, game loop and rules, drag-and-drop, repair mini-game, canvas drawing, sound and voice |
-| `build.js`, `firebase.json` | Firebase Hosting build and settings |
+| `game.js` | Rules and flow: NASA loader, levels, packing, storms, repairs, debrief, scoring. Start with `CAMPAIGN` (storms), `LEVELS` (difficulty) and `SHOWCASE` (planned breakdowns) |
+| `scene.js` | Everything drawn on the canvas, including the launch and aurora scenes |
+| `learn.js` | Word chips, fact cards, quiz bank, badges, Logbook, data sources panel |
+| `sfx.js` | Sound effects and radio voices, synthesized in the browser |
+| `crew.js` | Team avatars, Commander customization, crew introductions |
+| `cosmic-match.*`, `solar-panels.html`, `greenhouse-guard.html`, `scrubber-sprint.html`, `shield-sync.*`, `leak-patrol.html` + `moon-water.*` | The six mini-games, each also playable on its own |
+| `build.js`, `firebase.json` | Build and hosting; the build adds a version tag so browsers always load fresh files |
 
-Useful spots in `game.js`: `CAMPAIGN` (which storms and their timings), `ZONES` (rooms and shielding), `tick()` (all game rules and rates), `endGame()` (scoring and ratings), `draw()` (everything on screen).
+## Status
 
-## Status and next steps
+**Checked:** an automated player finished all five rounds on the Cadet level with every crew member at 100% health, all six mini-games opened, no fact card repeated and no errors. The quiz was simulated over 900 missions with no repeated question. Shield Sync was played through its own controls. All five storms load live from NASA on the public site.
 
-**Checked in the browser, no errors:** NASA data loads live and falls back to the saved copy offline; drag-and-drop moves crew through the ladder shaft; storms break machines and the plug mini-game fixes them; the flow from storm to debrief to final rating and replay. These were checked with timers skipped, so a full game at normal speed is still untested.
+**Not checked:**
 
-**Known gaps:**
-
-- Difficulty is untuned. A passive player loses all four crew by storm 3.
-- Power is still + / − buttons, the least game-like part.
-- Art is simple drawn shapes; no 3D or Moon Trek imagery yet.
-- Mission Control voice uses the browser's built-in speech, scripted, no AI yet.
-- Not checked on a phone.
-
-Next steps (put a name on each):
-
-- [ ] Play 3 full games at normal speed and tune difficulty
-- [x] Host a shareable link on Firebase (storm-watch-spaceapps.web.app)
-- [ ] Visual polish: Moon Trek south pole imagery, better astronaut art, more storm effects
-- [ ] Gemini as Mission Control: varied crisis lines and an after-action debrief, with scripted lines as fallback
-- [x] Use life-support baseline (BVAD) numbers for oxygen, water and food use, and cite them
-- [ ] Test on phone and tablet
-- [ ] Record the demo video and write the project page
+- A full game played by a person at normal speed, on the final version
+- The audio (voices use the device's own speech voices, so quality varies)
+- Pilot and Commander levels since the last balance changes
+- A real phone or tablet
+- The new lunar-ice Leak Patrol puzzle played by hand inside the main game
 
 ## Before we submit
 
-Submissions close Sunday, Nov 15 at 11:59 PM local time (per the Space Apps schedule as relayed by Gemini; confirm on the official site).
-
-- [ ] Read the official Junior Astronaut Mission Trainer page at spaceappschallenge.org/2026/challenges and confirm the wording in *How it fits the challenge*
-- [ ] Confirm we are entering Mission Trainer, not Space Mission Design Game (that one is about pre-launch choices: rocket, mass, budget, comms)
-- [ ] Fact-check the debrief text for storms 2 and 3 (Gannon storm, Curiosity RAD reading in Sept 2017); it was written from memory, not a cited source
-- [ ] Credit NASA DONKI on the project page and in the game
-- [ ] Plan the 2-minute demo: start on the live-data screen, drag crew to the shelter as the storm hits, fix one machine, show the debrief card
-- [ ] Have the offline fallback ready in case venue Wi-Fi drops during judging
-
-## Judging build (Nov 14, evening)
-
-Both pull requests are merged, plus a full pass on gameplay, graphics, sound and learning. See the README for the challenge-fit table and data sources.
-
-**From the pull requests**
-
-- Sidra's PR is merged as is: BVAD life support in real kilograms, the team crew with portraits and Commander customization, crew introductions, garden health and Greenhouse Guard.
-- Quan's PR is merged with fixes. The launch-prep screen is now "Pack your rocket" (it used `CARGO[k].bonus`, which did not exist, so tanks became NaN). The per-storm calm timer is kept. The fourth storm was labelled X3.3 on 2023-05-11, but NASA DONKI lists that flare as M2.1 with no radiation storm; it is replaced with the real M4.2 flare of 2023-05-09, which did send particles to GOES. The X3.3 flare Quan may have meant (2024-02-09) is in Endless mode.
-
-**New in this build**
-
-- Flow: title → crew intro → pack the rocket → launch cutscene → 4 storms → Mars aurora finale → rating and badges → optional Endless mode with six more real storms.
-- Three levels: Cadet (ages 7-9, hints and an "Everyone to the shelter" button), Pilot (10-12), Commander (older players).
-- All three mini-games open inside the main game with an animated transition: Cosmic Match fixes oxygen, Greenhouse Guard protects plants, Solar Reboot restores the panels.
-- Learning: 19 collectible fact cards with sources, a quiz question in every debrief, tap-to-explain word chips, a "what your choices cost" report, Call Mission Control with the real 2.6 s signal delay, a "Real NASA data" panel, and a Cadet Logbook saved on the device.
-- Sound: synthesized effects, ambience, a Geiger counter, and radio voices with Apollo-style Quindar tones. Voices use the device's own speech voices, so quality varies by device.
-- Code is split: `game.js` (rules), `scene.js` (drawing), `sfx.js` (sound), `learn.js` (learning content), `crew.js` (Sidra's crew code, moved unchanged).
-
-**Still to do**
-
-- [ ] Play full games at normal speed with real kids in the age range and adjust `LEVELS` in `game.js`
-- [ ] Check on a phone and a tablet
-- [ ] Fact-check pass by a second person on `learn.js` (every card names its source)
-- [ ] Add team photos to `crew/` if wanted
-- [ ] Record the demo video
-
-## Run 2 changes (Nov 14 evening)
-
-- **Fact cards pause the game.** During play a fact card opens in the middle of the screen, the base is paused, and it stays until the player taps **Got it ▶**. Cards wait while a mini-game or repair puzzle is open. Outside play (debrief, packing) they are still small pop-ups that close by themselves.
-- **Mini-game finish buttons.** Inside the main game every mini-game's results button now says **Continue →** (not "Play again"). Each game tells the main game the moment it is won, so the button at the top right changes to **Continue ▶** and also counts the result. Leaving before finishing still counts as not done.
-- **Leak Patrol and Scrubber Sprint are plugged in.** Water recycler broken → Leak Patrol. Oxygen machine broken → Scrubber Sprint and Cosmic Match take turns. A sloppy round loses a little water or oxygen (see `docs/WATER-AND-AIR-GAMES.md`).
-- **Phones.** The page no longer overflows sideways on a phone; cards, crew chips and the header fit; mini-games open full screen; tap targets in the scene grow on small screens; dragging an astronaut no longer scrolls the page; tap an astronaut (or their card) then tap a room also works. Tested in Chrome's phone emulation (390 x 844, touch) only: **still needs a check on a real phone**, in portrait and landscape.
-
-## Judges build (Nov 15)
-
-- **Storm order:** latest live flare, May 2023 (M4.2), August 2023 (X1.5, Quan's pick), September 2017 (X8.2) with the Mars aurora, then the finale **Flare Swarm** (Quan's idea): four real X flares from region 13664, May 8-11 2024. All fetched live from NASA DONKI with saved copies.
-- **Shield Sync** (new mini-game) is plugged in for shield repairs. The old plug puzzle is removed; the grow lights are rebooted with Cosmic Match.
-- **Every mini-game appears in every mission:** one planned breakdown per storm (SHOWCASE in game.js), on top of surprise breakdowns, which are capped at 2 per storm on Cadet and Pilot.
-- **Fixes from the Nov 15 playtest:** each fact card shows at most once per mission; a debrief can no longer open over a repair (all repairs pause the base); the astronaut who runs to fix a machine goes back to safety afterwards; long real warning times no longer drain days of supplies; Cadet keeps 2 kW more power in storms.
-- **Badges:** the end screen shows the whole checklist (10 badges, new ones marked) and the Logbook button shows the count.
-- Checked with an automated player on Cadet: five rounds, all crew at 100% health, all six mini-games played, no repeated cards, no errors. Shield Sync was also played through its own controls. Not yet played start to finish by a person at normal speed.
+- [ ] Play one full game with sound on, and one on a phone
+- [ ] Confirm the challenge wording on spaceappschallenge.org
+- [ ] Second-person fact check of the fact cards and quiz in `learn.js`
+- [ ] Scan the QR code once to confirm it opens the game
+- [ ] Decide what to do with Quan's open pull request #3
+- [ ] Record the 2-minute demo: live-data start screen, pack and launch, shelter the crew as a storm hits, one repair mini-game, a debrief card, the Flare Swarm
+- [ ] Write the project page, crediting the data sources above
