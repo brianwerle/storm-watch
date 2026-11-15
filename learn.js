@@ -201,17 +201,19 @@ const Learn = (() => {
   const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(p => p[1]);
   function questionFor(ev, asked, lv = 1) {
     const lastType = asked.lastType, seen = log.seenQ || [];
-    const ok = q => fits(q, lv) && !asked.includes(q.id) && q.type !== lastType;
+    // storm questions get a new id for every storm, so also compare the wording: never the same question twice in a mission
+    const used = q => asked.includes(q.id) || (asked.texts || []).includes(q.q);
+    const ok = q => fits(q, lv) && !used(q) && q.type !== lastType;
     // about half the time ask about the storm you just survived, otherwise mix topics; prefer questions not seen in recent games
     const storm = stormQuestions(ev).filter(ok), rest = BANK.filter(ok);
     const pick = list => shuffle(list).sort((a, b) => seen.includes(a.id) - seen.includes(b.id))[0];
     return (storm.length && Math.random() < 0.5 && pick(storm)) || pick(rest) || pick(storm)
-      || pick(BANK.filter(q => fits(q, lv) && !asked.includes(q.id))) || pick(BANK.filter(q => fits(q, lv)));
+      || pick(BANK.filter(q => fits(q, lv) && !used(q))) || pick(BANK.filter(q => fits(q, lv)));
   }
   // Renders a question into `host`; calls done(correct) once answered.
   function quiz(host, ev, asked, done, lv) {
     const q = questionFor(ev, asked, lv), order = q.a.map((_, i) => i).sort(() => Math.random() - 0.5);
-    asked.push(q.id); asked.lastType = q.type;
+    asked.push(q.id); (asked.texts = asked.texts || []).push(q.q); asked.lastType = q.type;
     log.seenQ = [q.id, ...(log.seenQ || []).filter(id => id !== q.id)].slice(0, 16); save();
     host.innerHTML = `<h3>🧠 CADET QUESTION <small>+25 ★ if you get it right</small></h3><p class="qq">${q.q}</p>
       <div class="qa">${order.map(i => `<button data-i="${i}">${q.a[i]}</button>`).join('')}</div><p class="why" hidden></p>`;
