@@ -107,20 +107,23 @@ const SFX = (() => {
   const loadVoices = () => { try { voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); } catch (e) {} };
   if (window.speechSynthesis) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   const score = v => (/natural|neural|online/i.test(v.name) ? 8 : 0) + (/google/i.test(v.name) ? 5 : 0) + (/samantha|aria|jenny|guy|davis|daniel|karen/i.test(v.name) ? 3 : 0) + (/en-US/i.test(v.lang) ? 2 : 0) + (v.localService ? 0 : 1);
-  function voiceFor(kind) {
+  // Each speaker asks for a particular voice first (prefer), then falls back to any low or high voice.
+  // Whole-word matching matters here: "Female" contains "male".
+  function voiceFor(kind, prefer) {
     if (!voices.length) loadVoices();
     const sorted = [...voices].sort((a, b) => score(b) - score(a));
-    const male = sorted.find(v => /guy|davis|david|daniel|male|mark|ryan|christopher|eric/i.test(v.name));
-    const female = sorted.find(v => /aria|jenny|samantha|zira|female|karen|michelle|ana|emma/i.test(v.name));
-    return (kind === 'low' ? male : kind === 'high' ? female : null) || sorted[0] || null;
+    const wanted = prefer && sorted.find(v => prefer.test(v.name));
+    const male = sorted.find(v => /\b(guy|davis|david|daniel|male|mark|ryan|christopher|eric)\b/i.test(v.name));
+    const female = sorted.find(v => /\b(aria|jenny|samantha|zira|female|karen|michelle|ana|emma)\b/i.test(v.name));
+    return wanted || (kind === 'low' ? male : kind === 'high' ? female : null) || sorted[0] || null;
   }
   const WHO = {
-    capcom: { kind: 'low', pitch: 0.85, rate: 1.02, radio: true },
-    cmd:    { kind: 'any', pitch: 1.05, rate: 1.05 },
-    brian:  { kind: 'low', pitch: 0.75, rate: 1.0 },
-    sidra:  { kind: 'high', pitch: 1.15, rate: 1.03 },
-    quan:   { kind: 'low', pitch: 1.2, rate: 1.1 },
-    base:   { kind: 'high', pitch: 1.0, rate: 1.0 },
+    capcom: { kind: 'low', pitch: 0.85, rate: 1.02, radio: true, prefer: /Google UK English Male|\bGuy\b|Daniel/i },
+    cmd:    { kind: 'any', pitch: 1.05, rate: 1.05, prefer: /Google US English|Aria|Samantha/i },
+    brian:  { kind: 'low', pitch: 0.75, rate: 1.0, prefer: /\bDavid\b|Davis/i },
+    sidra:  { kind: 'high', pitch: 1.15, rate: 1.03, prefer: /Google UK English Female|Jenny|Karen/i },
+    quan:   { kind: 'low', pitch: 1.2, rate: 1.1, prefer: /\bMark\b|Ryan|Eric/i },
+    base:   { kind: 'high', pitch: 1.0, rate: 1.0, prefer: /Zira|Michelle|Emma/i },
   };
   function pump() {
     if (talking || !queue.length) return;
@@ -129,7 +132,7 @@ const SFX = (() => {
     const done = () => { if (w.radio) { play('static'); play('quindarOut'); } talking = false; setTimeout(pump, 250); };
     try {
       const u = new SpeechSynthesisUtterance(text.replace(/[★🌱🔧⚡💧🛡️🚨📡]/gu, ''));
-      const v = voiceFor(w.kind); if (v) u.voice = v;
+      const v = voiceFor(w.kind, w.prefer); if (v) u.voice = v;
       u.pitch = w.pitch; u.rate = w.rate; u.volume = 1;
       u.onend = done; u.onerror = done;
       if (w.radio) { play('quindarIn'); play('static'); setTimeout(() => speechSynthesis.speak(u), 320); }
