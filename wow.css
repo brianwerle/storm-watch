@@ -175,3 +175,7 @@ body.debrief .fact, body.end .fact, body.brief .fact, body.prep .fact, body.cut 
 /* badge checklist */
 .badges div.new { animation: pulse .6s infinite alternate; border-color: #fff; }
 .newbadge { background: #1a1508; border: 2px solid var(--amber); border-radius: 10px; padding: 6px 10px; }
+
+/* label in front of the countdown so kids know what it counts down to */
+#timer small { font-family: "Exo 2", "Segoe UI", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .02em; opacity: .75; margin-right: 4px; text-transform: uppercase; }
+@media (max-width: 600px) { #timer small { font-size: 9px; } }

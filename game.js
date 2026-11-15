@@ -35,7 +35,7 @@ const CAMPAIGN = [
     saved: { cls: 'X1.5', peak: '2023-08-07T20:46Z', region: 13386, loc: 'N11W90', sepTime: '2023-08-08T01:00Z', sepInst: 'GOES-P: SEISS >10 MeV', link: 'https://ccmc.gsfc.nasa.gov/DONKI/view/FLR/26403/-1' } },
   { key: '2017', flrID: '2017-09-10T15:35:00-FLR-001', from: '2017-09-10', to: '2017-09-10',
     title: 'The X8.2 Monster', sev: 2.2, calm: 24, warn: 13, storm: 36, cme: 'Over 2,300 km every second (NASA DONKI)',
-    fact: 'One of the biggest flares of its solar cycle. It reached all the way to Mars, where NASA\'s Curiosity rover measured surface radiation double the normal level and the MAVEN spacecraft saw the whole planet glow.',
+    fact: 'One of the biggest flares of its solar cycle. It reached all the way to Mars, where NASA\'s Curiosity rover measured the highest surface radiation since it landed in 2012, more than double its previous record, and the MAVEN spacecraft saw the whole planet glow.',
     saved: { cls: 'X8.2', peak: '2017-09-10T16:06Z', region: 12673, loc: 'S08W88', sepTime: '2017-09-10T16:25Z', sepInst: 'GOES13: SEM/EPS >100 MeV' } },
   // Finale idea from Quan (PR #3): several flares back to back. Built on a real sequence: in May 2024 sunspot region 13664
   // fired 7 X-class flares in four days (NASA DONKI). The game plays four of them in a row with a short break between.
@@ -276,7 +276,9 @@ function render() {
   $('#round').textContent = sw && S.phase !== 'debrief' ? `Finale · Flare ${(S.flare || 0) + 1} / ${sw.length}` : S.endless ? `Endless · Storm ${S.round + 1}` : `Storm ${Math.min(S.round + 1, EVENTS.length)} / ${EVENTS.length}`;
   $('#phase').textContent = { brief: 'STANDBY', meet: 'CREW BRIEFING', prep: 'PACKING', cut: 'IN FLIGHT', calm: 'ALL CLEAR', warning: 'STORM INCOMING', storm: 'RADIATION STORM', debrief: 'DEBRIEF', end: 'MISSION OVER' }[S.phase];
   const hps = playing() ? hoursPerSec(ev) : 1, mins = S.t * hps * 60;
-  $('#timer').textContent = !playing() ? '--' : S.phase === 'warning' ? (mins >= 120 ? (mins / 60).toFixed(1) + ' h' : Math.ceil(mins) + ' min') : Math.ceil(S.t * hps) + ' h';
+  const left = !playing() ? '--' : S.phase === 'warning' ? (mins >= 120 ? (mins / 60).toFixed(1) + ' h' : Math.ceil(mins) + ' min') : Math.ceil(S.t * hps) + ' h';
+  const what = !playing() ? '' : { calm: 'next storm in', warning: 'radiation hits in', storm: 'storm ends in' }[S.phase] || '';
+  $('#timer').innerHTML = what ? `<small>${what}</small> ${left}` : left;
   $('#phasebar i').style.width = (playing() ? Math.max(0, S.t / S.dur * 100) : 0) + '%';
   $('#clock').textContent = clock(S.hours);
   $('#pwrUsed').textContent = used(); $('#pwrMax').textContent = S.supply;
@@ -309,8 +311,14 @@ function render() {
 }
 
 // ---------- crew movement ----------
+// NASA's career radiation limit for astronauts is 600 mSv (NASA-STD-3001). Dose is stored in tens of mSv.
+const CAREER = 60, grounded = c => c.dose >= CAREER;
 function orderMove(c, zone, quiet) {
   if (!c || c.out || !playing() || (c.zone === zone && !c.path.length)) return;
+  if (zone === 'eva' && grounded(c)) {          // past NASA's 600 mSv career limit: no more moonwalks
+    if (!quiet) { log(`Flight surgeon: ${c.name} has passed NASA's 600 mSv career limit and is grounded. No more moonwalks.`, 'warn'); emote(c, '🚫', 2); SFX.play('click'); }
+    return;
+  }
   const z = ZONES[zone], tx = z.slot(c.i);
   c.zone = zone; c.path = [];
   if (Math.abs(c.y - z.floor) > 1) {            // different level: go via the ladder shaft
@@ -497,8 +505,12 @@ function tick() {
     const where = radAt(c), vest = S.cargo.vest && where > 0.1 ? 0.75 : 1;
     const before = c.dose;
     c.dose += S.I * where * cut * L.dose * vest * dt + BACKGROUND * where * h;
-    if (before < 15 && c.dose >= 15 && once('bio' + c.id)) {          // 150 mSv: bio-telemetry alert, backed by NASA OSDR research
+    if (before < 15 && c.dose >= 15 && once('bio' + c.id)) {          // 150 mSv: bio-telemetry alert (a game threshold; the fact card it shows cites NASA OSDR radiation-biology studies)
       log(`Bio-telemetry alert: ${c.name}'s radiation dose is climbing. Get them to the shelter.`, 'warn'); emote(c, '⚠️', 2.5); Learn.flash('cells', false);
+    }
+    if (before < CAREER && grounded(c) && once('career' + c.id)) {
+      log(`${c.name} just passed NASA's 600 mSv career limit. The flight surgeon has grounded them: no more moonwalks.`, 'bad'); emote(c, '🚫', 3);
+      if (c.zone === 'eva') orderMove(c, 'shelter', true);
     }
     if (T.o2 <= 0) c.health -= 4 * L.use * dt;
     if (T.h2o <= 0) c.health -= 1.5 * L.use * dt;
@@ -521,7 +533,7 @@ function tick() {
     if (S.phase === 'calm') {
       setPhase('warning', ev.warn * L.warn, 'STORM INCOMING', 'Everyone to the Storm Shelter!');
       SFX.ambience('warning'); SFX.play('alarm'); showDossier(ev);
-      log(`Storm Watch, this is Mission Control. An ${ev.cls[0]} class solar flare, strength ${ev.cls.slice(1)}, has been detected. Radiation arrives in ${fmtMins(warnMins(ev))}${ev.mins != null ? '' : ', this is a drill'}. All crew to the Storm Shelter!`, 'warn');
+      log(`Storm Watch, this is Mission Control. ${/[AMX]/.test(ev.cls[0]) ? 'An' : 'A'} ${ev.cls[0]} class solar flare, strength ${ev.cls.slice(1)}, has been detected. Radiation arrives in ${fmtMins(warnMins(ev))}${ev.mins != null ? '' : ', this is a drill'}. All crew to the Storm Shelter!`, 'warn');
     } else if (S.phase === 'warning') {
       S.preLvl = Object.fromEntries(Object.keys(S.sys).map(k => [k, S.sys[k].lvl]));
       setPhase('storm', ev.storm, 'RADIATION STORM', 'Stay in the shelter. Fix what breaks.'); S.shake = 0.9;
@@ -764,7 +776,7 @@ function debrief() {
     });
   if ($('#finish')) $('#finish').onclick = endGame;
   S.quizTotal++;
-  Learn.quiz($('#quiz'), ev, S.asked, ok => { if (ok) { S.quizRight++; S.science += 25; render(); } });
+  Learn.quiz($('#quiz'), ev, S.asked, ok => { if (ok) { S.quizRight++; S.science += 25; render(); } }, { cadet: 1, pilot: 2, commander: 3 }[LEVEL]);
   setTimeout(() => Learn.flash({ live: 'classes', 2023: 'speed', '2023b': 'speed', swarm: 'gannon', 2017: 'cells' }[ev.key] || 'apollo'), 1500);
   if (S.round === 1) setTimeout(() => Learn.flash('bones'), 14000);
 }
@@ -784,6 +796,8 @@ function endGame() {
     - S.crew.reduce((a, c) => a + c.dose, 0));
   let rating = score >= 1300 ? 'FLIGHT DIRECTOR' : score >= 1100 ? 'MISSION COMMANDER' : score >= 850 ? 'MISSION SPECIALIST' : 'CADET IN TRAINING';
   if (alive.length < 4 && score >= 1100) rating = 'MISSION SPECIALIST';
+  const overLimit = S.crew.filter(grounded);
+  if (overLimit.length && rating !== 'CADET IN TRAINING') rating = 'CADET IN TRAINING';   // real flight directors never let crew pass the career limit
   if (!alive.length) rating = 'MISSION CUT SHORT';
   const fresh = [];
   const give = (id, cond) => { if (cond && Learn.award(id)) fresh.push(id); };
@@ -800,6 +814,7 @@ function endGame() {
     <div class="rating">${rating}</div>
     <p class="scoreline">Score <b>${score}</b>${record ? ' <em>NEW BEST!</em>' : ` · best ${L.best}`} · Science ★ <b>${Math.floor(S.science)}</b> · Quiz <b>${S.quizRight}/${S.quizTotal}</b> · Storms survived <b>${S.round + (alive.length ? 1 : 0)}</b></p>
     <ul class="crewlist">${S.crew.map(crewLine).join('')}</ul>
+    ${overLimit.length && alive.length ? `<p>⚠️ ${overLimit.map(c => esc(c.name)).join(', ')} went past NASA's 600 mSv career limit. A real flight director would never allow that, so your rating is capped. Use the Storm Shelter sooner next time!</p>` : ''}
     ${S.crew[0].out && alive.length ? `<p>Commander ${esc(S.crew[0].name)} needed the medical bay; ${esc(alive[0].name)} led the crew.</p>` : ''}
     <h3>YOUR BADGES: ${nBadges} OF ${allBadges}${fresh.length ? ` · ${fresh.length} NEW!` : ''}</h3>
     ${Learn.badgeGrid(fresh)}
@@ -904,7 +919,7 @@ const toWorld = e => { const r = cv.getBoundingClientRect(); return [(e.clientX 
 const zoneAt = (x, y) => Object.keys(ZONES).find(k => { const z = ZONES[k]; return x >= z.x && x <= z.x + z.w && y >= z.y - 10 && y <= z.y + z.h + 10; });
 // On a small screen the scene is shrunk, so tap targets grow to stay at least ~22 px wide under a finger.
 const reach = base => Math.max(base, 22 * W / cv.getBoundingClientRect().width);
-const crewAt = (x, y) => { const r = reach(28); return S.crew.filter(c => !c.out && Math.abs(x - c.x) < r && y > c.y - 56 - r && y < c.y - 14 + r).sort((a, b) => Math.abs(x - a.x) - Math.abs(x - b.x))[0]; };
+const crewAt = (x, y) => { const r = reach(28); return S.crew.filter(c => !c.out && Math.abs(x - c.x) < r && y > c.y - 70 - r && y < c.y - 10 + r).sort((a, b) => Math.abs(x - a.x) - Math.abs(x - b.x))[0]; };
 const fixAt = (x, y) => Object.keys(SYSTEMS).find(k => S.sys[k].broken && Math.hypot(x - SYSTEMS[k].at[0], y - SYSTEMS[k].at[1]) < reach(30));
 let downAt = null;
 
@@ -937,7 +952,7 @@ $('#call').onclick = callHome;
 $('#allShelter').onclick = () => { S.crew.forEach(c => orderMove(c, 'shelter', true)); SFX.play('drop'); log('Everybody to the shelter, go go go!', 'warn', 'cmd'); };
 $('#srcbadge').onclick = Learn.sources;
 $('#logbtn').onclick = Learn.logbook;
-$('#chips').innerHTML = Learn.chips(['radiation', 'dose', 'flare', 'microgravity', 'sol', 'delay']);
+$('#chips').innerHTML = Learn.chips(['radiation', 'dose', 'flare', 'cme', 'regolith', 'delay']);
 
 // Outside readout: real conditions at the lunar south pole, one line at a time.
 const OUTSIDE = [
@@ -947,7 +962,7 @@ const OUTSIDE = [
   '☀️ Nearby ridges are sunlit most of the year: great for solar panels (NASA LRO)',
   '🪶 Gravity here is one sixth of Earth\'s: a 30 kg kid weighs like 5 kg',
   '💨 No air outside: sound cannot travel and the sky is always black',
-  '🔴 On Mars, a day is called a sol: 24 hours 39 minutes',
+  '🧊 Craters here hide water ice: future crews can turn it into water and oxygen (NASA LCROSS)',
 ];
 let outsideI = 0;
 const tickOutside = () => { const el = $('#outside'); el.classList.remove('in'); void el.offsetWidth; el.textContent = OUTSIDE[outsideI++ % OUTSIDE.length]; el.classList.add('in'); };
