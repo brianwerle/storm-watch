@@ -646,7 +646,7 @@ function openMini(kind, done) {
 function closeMini(result) {
   const w = $('#ggwrap'); if (!w) return;
   w.classList.add('closing'); SFX.play('whooshout');
-  if (result) S.minis[S.gg] = true;
+  if (result && result.ok !== false) S.minis[S.gg] = true;   // only a won mini-game counts toward the Game Master badge
   setTimeout(() => { w.remove(); S.gg = false; const d = miniDone; miniDone = null; lastWalk = performance.now(); d && d(result); render(); }, 380);
 }
 addEventListener('message', e => {
